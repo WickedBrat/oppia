@@ -19,6 +19,9 @@
 oppia.constant(
   'FLAG_EXPLORATION_URL_TEMPLATE', '/flagexplorationhandler/<exploration_id>');
 
+  $scope.canEdit = GLOBALS.canEdit;
+  $scope.username = GLOBALS.username;
+  
 oppia.controller('LearnerLocalNav', [
   '$scope', '$uibModal', '$http', 'ExplorationPlayerService', 'AlertsService',
   'FocusManagerService', 'UrlInterpolationService',
@@ -157,5 +160,3 @@ oppia.controller('LearnerLocalNav', [
     };
   }
 ]);
-$scope.canEdit = GLOBALS.canEdit;
-$scope.username = GLOBALS.username;

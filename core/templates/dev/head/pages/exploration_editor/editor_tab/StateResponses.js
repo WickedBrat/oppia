@@ -38,7 +38,7 @@ oppia.controller('StateResponses', [
       '/general/drag_dots.png');
 
     var _initializeTrainingData = function() {
-      var explorationId = ContextService.getExplorationId();
+      var explorationId = ContextService.getQuestionId();
       var currentStateName = EditorStateService.getActiveStateName();
       TrainingDataService.initializeTrainingData(
         explorationId, currentStateName);

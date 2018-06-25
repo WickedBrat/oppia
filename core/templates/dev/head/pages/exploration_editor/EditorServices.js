@@ -17,15 +17,15 @@
  */
 
 oppia.factory('statePropertyService', [
-  '$log', 'ChangeListService', 'AlertsService', 'ExplorationStatesService',
-  function($log, ChangeListService, AlertsService, ExplorationStatesService) {
+  '$log', 'ChangeListService', 'AlertsService', 'QuestionStatesService',
+  function($log, ChangeListService, AlertsService, QuestionStatesService) {
     // Public base API for data services corresponding to state properties
     // (interaction id, content, etc.)
     // WARNING: This should be initialized only in the context of the state
     // editor, and every time the state is loaded, so that proper behavior is
     // maintained if e.g. the state is renamed.
     // TODO(sll): Remove this service and its descendants, in favour of using
-    // ExplorationStatesService directly.
+    // QuestionStatesService directly.
     return {
       init: function(stateName, value) {
         if (this.setterMethodKey === null) {
@@ -79,7 +79,7 @@ oppia.factory('statePropertyService', [
 
         AlertsService.clearWarnings();
 
-        var setterFunc = ExplorationStatesService[this.setterMethodKey];
+        var setterFunc = QuestionStatesService[this.setterMethodKey];
         setterFunc(this.stateName, angular.copy(this.displayed));
         this.savedMemento = angular.copy(this.displayed);
       },

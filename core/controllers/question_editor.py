@@ -76,8 +76,6 @@ class EditableQuestionDataHandler(base.BaseHandler):
         if not feconf.ENABLE_NEW_STRUCTURES:
             raise self.PageNotFoundException
 
-        question_domain.Question.require_valid_question_id(question_id)
-
         question = question_services.get_question_by_id(question_id)
 
         if question is None:

@@ -19,12 +19,12 @@
 
 oppia.controller('StateStatistics', [
   '$rootScope', '$scope', '$uibModal', 'ExplorationDataService',
-  'EditorStateService', 'ExplorationStatesService', 'TrainingDataService',
+  'EditorStateService', 'QuestionStatesService', 'TrainingDataService',
   'stateCustomizationArgsService', 'ExplorationHtmlFormatterService',
   'TrainingModalService', 'INTERACTION_SPECS',
   function(
       $rootScope, $scope, $uibModal, ExplorationDataService, EditorStateService,
-      ExplorationStatesService, TrainingDataService,
+      QuestionStatesService, TrainingDataService,
       stateCustomizationArgsService, ExplorationHtmlFormatterService,
       TrainingModalService, INTERACTION_SPECS) {
     $scope.isInteractionTrainable = false;
@@ -59,7 +59,7 @@ oppia.controller('StateStatistics', [
 
     $scope.$on('refreshStateEditor', function() {
       $scope.stateName = EditorStateService.getActiveStateName();
-      var stateData = ExplorationStatesService.getState($scope.stateName);
+      var stateData = QuestionStatesService.getState($scope.stateName);
       $scope.initStateStatistics(stateData);
     });
 

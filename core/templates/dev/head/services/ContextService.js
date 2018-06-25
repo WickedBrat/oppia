@@ -34,6 +34,7 @@ oppia.factory('ContextService', [
   function(UrlService, PAGE_CONTEXT, EDITOR_TAB_CONTEXT) {
     var pageContext = null;
     var explorationId = null;
+    var questionId = null;
 
     return {
       // Returns a string representing the current tab of the editor (either

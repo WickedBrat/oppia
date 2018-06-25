@@ -14,56 +14,57 @@
 
 /**
  *  @fileoverview Service for handling all interactions
- *  with the exploration editor backend.
+ *  with the question editor backend.
  */
 
-oppia.factory('ExplorationDataService', [
+oppia.factory('QuestionDataService', [
   '$http', '$log', '$window', '$q', 'AlertsService',
-  'EditableExplorationBackendApiService', 'LocalStorageService',
-  'ReadOnlyExplorationBackendApiService', 'UrlService',
+  'EditableQuestionBackendApiService', 'LocalQuestionStorageService',
+  'ReadOnlyQuestionBackendApiService', 'UrlService',
   function($http, $log, $window, $q, AlertsService,
-      EditableExplorationBackendApiService, LocalStorageService,
-      ReadOnlyExplorationBackendApiService, UrlService) {
-    // The pathname (without the hash) should be: .../create/{exploration_id}
-    var explorationId = '';
+      EditableQuestionBackendApiService, LocalQuestionStorageService,
+      ReadOnlyQuestionBackendApiService, UrlService) {
+    // The pathname (without the hash) should be:
+    // .../question_editor/{question_id}
+    var questionId = '';
     var draftChangeListId = null;
     var pathnameArray = UrlService.getPathname().split('/');
     for (var i = 0; i < pathnameArray.length; i++) {
-      if (pathnameArray[i] === 'create') {
-        var explorationId = pathnameArray[i + 1];
+      if (pathnameArray[i] === 'question_editor') {
+        questionId = pathnameArray[i + 1];
         break;
       }
     }
 
     var resolvedAnswersUrlPrefix = (
-      '/createhandler/resolved_answers/' + explorationId);
-    var explorationDraftAutosaveUrl = '';
+      '/question_editorhandler/resolved_answers/' + questionId);
+    var questionDraftAutosaveUrl = '';
     if (GLOBALS.can_edit) {
-      explorationDraftAutosaveUrl = (
-        '/createhandler/autosave_draft/' + explorationId);
+      questionDraftAutosaveUrl = (
+        '/questionhandler/autosave_draft/' + questionId);
     } else if (GLOBALS.can_translate) {
-      explorationDraftAutosaveUrl = (
-        '/createhandler/autosave_translation_draft/' + explorationId);
+      questionDraftAutosaveUrl = (
+        '/questionhandler/autosave_translation_draft/' + questionId);
     }
 
 
-    // Put exploration variables here.
-    var explorationData = {
-      explorationId: explorationId,
+    // Put question variables here.
+    var questionData = {
+      questionId: questionId,
       // Note that the changeList is the full changeList since the last
       // committed version (as opposed to the most recent autosave).
       autosaveChangeList: function(changeList, successCallback, errorCallback) {
         // First save locally to be retrieved later if save is unsuccessful.
-        LocalStorageService.saveExplorationDraft(
-          explorationId, changeList, draftChangeListId);
-        $http.put(explorationDraftAutosaveUrl, {
+        LocalQuestionStorageService.saveQuestionDraft(
+          questionId, changeList, draftChangeListId);
+        $http.put(questionDraftAutosaveUrl, {
           change_list: changeList,
-          version: explorationData.data.version
+          version: questionData.data.version
         }).then(function(response) {
           draftChangeListId = response.data.draft_change_list_id;
           // We can safely remove the locally saved draft copy if it was saved
           // to the backend.
-          LocalStorageService.removeExplorationDraft(explorationId);
+          LocalQuestionStorageService.removeQuestionDraft(questionId);
           if (successCallback) {
             successCallback(response);
           }
@@ -74,8 +75,8 @@ oppia.factory('ExplorationDataService', [
         });
       },
       discardDraft: function(successCallback, errorCallback) {
-        $http.post(explorationDraftAutosaveUrl, {}).then(function() {
-          LocalStorageService.removeExplorationDraft(explorationId);
+        $http.post(questionDraftAutosaveUrl, {}).then(function() {
+          LocalQuestionStorageService.removeQuestionDraft(questionId);
           if (successCallback) {
             successCallback();
           }
@@ -85,37 +86,37 @@ oppia.factory('ExplorationDataService', [
           }
         });
       },
-      // Returns a promise that supplies the data for the current exploration.
+      // Returns a promise that supplies the data for the current question.
       getData: function(errorCallback) {
-        if (explorationData.data) {
-          $log.info('Found exploration data in cache.');
-          return $q.resolve(explorationData.data);
+        if (questionData.data) {
+          $log.info('Found question data in cache.');
+          return $q.resolve(questionData.data);
         } else {
           // Retrieve data from the server.
-          // WARNING: Note that this is a version of the exploration with draft
+          // WARNING: Note that this is a version of the question with draft
           // changes applied. This makes a force-refresh necessary when changes
-          // are discarded, otherwise the exploration-with-draft-changes
+          // are discarded, otherwise the question-with-draft-changes
           // (which is cached here) will be reused.
           return (
-            EditableExplorationBackendApiService.fetchApplyDraftExploration(
-              explorationId).then(function(response) {
-              $log.info('Retrieved exploration data.');
+            EditableQuestionBackendApiService.fetchApplyDraftQuestion(
+              questionId).then(function(response) {
+              $log.info('Retrieved question data.');
               $log.info(response);
               draftChangeListId = response.draft_change_list_id;
-              explorationData.data = response;
-              var draft = LocalStorageService.getExplorationDraft(
-                explorationId);
+              questionData.data = response;
+              var draft = LocalQuestionStorageService.getQuestionDraft(
+                questionId);
               if (draft) {
                 if (draft.isValid(draftChangeListId)) {
                   var changeList = draft.getChanges();
-                  explorationData.autosaveChangeList(changeList, function() {
+                  questionData.autosaveChangeList(changeList, function() {
                     // A reload is needed so that the changelist just saved is
-                    // loaded as opposed to the exploration returned by this
+                    // loaded as opposed to the question returned by this
                     // response.
                     $window.location.reload();
                   });
                 } else {
-                  errorCallback(explorationId, draft.getChanges());
+                  errorCallback(questionId, draft.getChanges());
                 }
               }
               return response;
@@ -124,14 +125,14 @@ oppia.factory('ExplorationDataService', [
         }
       },
       // Returns a promise supplying the last saved version for the current
-      // exploration.
+      // question.
       getLastSavedData: function() {
-        return ReadOnlyExplorationBackendApiService.loadLatestExploration(
-          explorationId).then(function(response) {
-          $log.info('Retrieved saved exploration data.');
+        return ReadOnlyQuestionBackendApiService.loadLatestQuestion(
+          questionId).then(function(response) {
+          $log.info('Retrieved saved question data.');
           $log.info(response);
 
-          return response.exploration;
+          return response.question;
         });
       },
       resolveAnswers: function(stateName, resolvedAnswersList) {
@@ -143,8 +144,8 @@ oppia.factory('ExplorationDataService', [
         );
       },
       /**
-       * Saves the exploration to the backend, and, on a success callback,
-       * updates the local copy of the exploration data.
+       * Saves the question to the backend, and, on a success callback,
+       * updates the local copy of the question data.
        * @param {object} changeList - Represents the change list for
        *   this save. Each element of the list is a command representing an
        *   editing action (such as add state, delete state, etc.). See the
@@ -154,11 +155,11 @@ oppia.factory('ExplorationDataService', [
        */
       save: function(
           changeList, commitMessage, successCallback, errorCallback) {
-        EditableExplorationBackendApiService.updateExploration(explorationId,
-          explorationData.data.version, commitMessage, changeList).then(
+        EditableQuestionBackendApiService.updateQuestion(questionId,
+          questionData.data.version, commitMessage, changeList).then(
           function(response) {
             AlertsService.clearWarnings();
-            explorationData.data = response;
+            questionData.data = response;
             if (successCallback) {
               successCallback(
                 response.is_version_of_draft_valid,
@@ -173,6 +174,6 @@ oppia.factory('ExplorationDataService', [
       }
     };
 
-    return explorationData;
+    return questionData;
   }
 ]);

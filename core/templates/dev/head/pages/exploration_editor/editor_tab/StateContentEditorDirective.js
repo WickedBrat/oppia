@@ -91,11 +91,7 @@ oppia.directive('stateContentEditor', [
           };
 
           $scope.openStateContentEditor = function() {
-            console.log('coming here');
-            
             if ($scope.isEditable()) {
-              console.log('coming inside');
-              
               EditorFirstTimeEventsService.registerFirstOpenContentBoxEvent();
               $scope.contentEditorIsOpen = true;
             }

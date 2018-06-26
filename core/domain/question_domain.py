@@ -30,12 +30,14 @@ import utils
 # compatibility with previous change dicts.
 QUESTION_PROPERTY_LANGUAGE_CODE = 'language_code'
 QUESTION_PROPERTY_QUESTION_DATA = 'question_data'
+QUESTION_PROPERTY_CONTENT = 'content'
 
 ROLE_MANAGER = 'manager'
 ROLE_NONE = 'none'
 # This takes additional 'property_name' and 'new_value' parameters and,
 # optionally, 'old_value'.
 CMD_UPDATE_QUESTION_PROPERTY = 'update_question_property'
+CMD_EDIT_STATE_PROPERTY = 'edit_state_property'
 
 # The following commands are deprecated, as these functionalities will be
 # handled by a QuestionSkillLink class in the future.
@@ -50,7 +52,8 @@ class QuestionChange(object):
     """Domain object for changes made to question object."""
     QUESTION_PROPERTIES = (
         QUESTION_PROPERTY_QUESTION_DATA,
-        QUESTION_PROPERTY_LANGUAGE_CODE)
+        QUESTION_PROPERTY_LANGUAGE_CODE,
+        QUESTION_PROPERTY_CONTENT)
 
     def __init__(self, change_dict):
         """Initialize a QuestionChange object from a dict.
@@ -69,8 +72,7 @@ class QuestionChange(object):
         if 'cmd' not in change_dict:
             raise Exception('Invalid change_dict: %s' % change_dict)
         self.cmd = change_dict['cmd']
-
-        if self.cmd == CMD_UPDATE_QUESTION_PROPERTY:
+        if self.cmd == CMD_EDIT_STATE_PROPERTY:
             if (change_dict['property_name'] in
                     self.QUESTION_PROPERTIES):
                 self.property_name = change_dict['property_name']

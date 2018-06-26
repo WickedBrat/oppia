@@ -500,6 +500,9 @@ URLS = MAPREDUCE_HANDLERS + [
     get_redirect_route(
         r'%s/<question_id>' % feconf.QUESTION_EDITOR_URL_PREFIX,
         question_editor.QuestionEditorPage),
+    get_redirect_route(
+        r'/questionhandler/autosave_draft/<question_id>',
+        question_editor.QuestionAutosaveHandler),
 
     get_redirect_route(
         r'%s/<topic_id>' % feconf.TOPIC_EDITOR_URL_PREFIX,

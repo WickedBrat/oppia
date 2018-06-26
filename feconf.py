@@ -504,6 +504,43 @@ ALLOWED_INTERACTION_CATEGORIES = [{
     ],
 }]
 
+ALLOWED_QUESTION_INTERACTION_CATEGORIES = [{
+    'name': 'General',
+    'interaction_ids': [
+        'ImageClickInput',
+        'ItemSelectionInput',
+        'MultipleChoiceInput',
+        'TextInput'
+    ],
+}, {
+    'name': 'Math',
+    'interaction_ids': [
+        'FractionInput',
+        'GraphInput',
+        'LogicProof',
+        'NumericInput',
+        'SetInput',
+        'MathExpressionInput',
+        'NumberWithUnits',
+    ]
+}, {
+    'name': 'Programming',
+    'interaction_ids': [
+        'CodeRepl',
+        'PencilCodeEditor',
+    ],
+}, {
+    'name': 'Music',
+    'interaction_ids': [
+        'MusicNotesInput'
+    ],
+}, {
+    'name': 'Geography',
+    'interaction_ids': [
+        'InteractiveMap'
+    ],
+}]
+
 # The list of interaction IDs which correspond to interactions that set their
 # is_linear property to true. Linear interactions do not support branching and
 # thus only allow for default answer classification. This value is guarded by a

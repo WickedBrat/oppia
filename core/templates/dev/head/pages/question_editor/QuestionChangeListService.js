@@ -36,8 +36,7 @@ oppia.factory('QuestionChangeListService', [
 
     // All these constants should correspond to those in exp_domain.py.
     // TODO(sll): Enforce this in code.
-    var CMD_EDIT_STATE_PROPERTY = 'edit_state_property';
-    var CMD_EDIT_EXPLORATION_PROPERTY = 'edit_question_property';
+    var CMD_UPDATE_QUESTION_PROPERTY = 'update_question_property';
 
     var ALLOWED_EXPLORATION_BACKEND_NAMES = {
       category: true,
@@ -75,8 +74,6 @@ oppia.factory('QuestionChangeListService', [
       // opened):
       // - Version Mismatch.
       // - Non-strict Validation Fail.
-      console.log(questionChangeList);
-      
       QuestionDataService.autosaveChangeList(
         questionChangeList,
         function(response) {
@@ -179,7 +176,7 @@ oppia.factory('QuestionChangeListService', [
           return;
         }
         addChange({
-          cmd: CMD_EDIT_STATE_PROPERTY,
+          cmd: CMD_UPDATE_QUESTION_PROPERTY,
           new_value: angular.copy(newValue),
           old_value: angular.copy(oldValue),
           property_name: backendName,

@@ -17,21 +17,28 @@
  */
 
 oppia.factory('statePropertyService', [
-  '$log', 'ChangeListService', 'AlertsService', 'QuestionStatesService',
-  function($log, ChangeListService, AlertsService, QuestionStatesService) {
+  '$log', 'ChangeListService', 'AlertsService', 'ExplorationStatesService',
+  'QuestionStatesService',
+  function($log, ChangeListService, AlertsService, ExplorationStatesService,
+      QuestionStatesService) {
     // Public base API for data services corresponding to state properties
     // (interaction id, content, etc.)
     // WARNING: This should be initialized only in the context of the state
     // editor, and every time the state is loaded, so that proper behavior is
     // maintained if e.g. the state is renamed.
     // TODO(sll): Remove this service and its descendants, in favour of using
-    // QuestionStatesService directly.
+    // ExplorationStatesService directly.
     return {
       init: function(stateName, value) {
         if (this.setterMethodKey === null) {
           throw 'State property setter method key cannot be null.';
         }
 
+        if (GLOBALS.context === 'question_editor') {
+          ActivityStatesService = QuestionStatesService;
+        } else {
+          ActivityStatesService = ExplorationStatesService;
+        }
         // The name of the state.
         this.stateName = stateName;
         // The current value of the property (which may not have been saved to
@@ -79,7 +86,7 @@ oppia.factory('statePropertyService', [
 
         AlertsService.clearWarnings();
 
-        var setterFunc = QuestionStatesService[this.setterMethodKey];
+        var setterFunc = ActivityStatesService[this.setterMethodKey];
         setterFunc(this.stateName, angular.copy(this.displayed));
         this.savedMemento = angular.copy(this.displayed);
       },

@@ -15,16 +15,21 @@
 """Controllers for the questions editor, from where questions are edited
 and are created.
 """
+import datetime
 import json
 
 from core.controllers import base
 from core.domain import acl_decorators
 from core.domain import question_domain
 from core.domain import question_services
+from core.domain import rights_manager
 from core.domain import role_services
 from core.domain import user_services
+from core.platform import models
 import feconf
 import utils
+
+(user_models) = models.Registry.import_models([models.NAMES.user])
 
 
 class QuestionEditorPage(base.BaseHandler):
@@ -77,13 +82,24 @@ class EditableQuestionDataHandler(base.BaseHandler):
             raise self.PageNotFoundException
 
         question = question_services.get_question_by_id(question_id)
+        question_rights = question_services.get_question_rights(question_id)
 
         if question is None:
             raise self.PageNotFoundException(
                 'The question with the given id doesn\'t exist.')
 
         self.values.update({
-            'question': question.to_dict()
+            'question': question.to_dict(),
+            'can_delete': rights_manager.check_can_delete_activity(
+                self.user, question_rights),
+            'can_edit': rights_manager.check_can_edit_question(
+                self.user, question_rights),
+            'can_publish': rights_manager.check_can_publish_question(
+                self.user, question_rights),
+            'can_unpublish': rights_manager.check_can_unpublish_question(
+                self.user, question_rights),
+            'ALLOWED_QUESTION_INTERACTION_CATEGORIES': (
+                feconf.ALLOWED_QUESTION_INTERACTION_CATEGORIES)
         })
 
         self.render_json(self.values)
@@ -191,3 +207,41 @@ class QuestionPublishHandler(base.BaseHandler):
             raise self.UnauthorizedUserException(e)
 
         self.render_json(self.values)
+
+
+class QuestionAutosaveHandler(QuestionEditorPage):
+    """Handles requests from the editor for draft autosave."""
+
+    @acl_decorators.can_edit_question
+    def put(self, question_id):
+        """Handles PUT requests for draft updation."""
+        # Raise an Exception if the draft change list fails non-strict
+        # validation.
+        try:
+            change_list_dict = self.payload.get('change_list')
+            change_list = [
+                question_domain.QuestionChange(change)
+                for change in change_list_dict]
+            version = self.payload.get('version')
+            question_services.create_or_update_draft(
+                question_id, self.user_id, change_list, version,
+                datetime.datetime.utcnow())
+        except utils.ValidationError as e:
+            # We leave any pre-existing draft changes in the datastore.
+            raise self.InvalidInputException(e)
+        question_user_data = user_models.QuestionUserDataModel.get(
+            self.user_id, question_id)
+        draft_change_list_id = question_user_data.draft_change_list_id
+        # If the draft_change_list_id is False, have the user discard the draft
+        # changes. We save the draft to the datastore even if the version is
+        # invalid, so that it is available for recovery later.
+        self.render_json({
+            'draft_change_list_id': draft_change_list_id,
+            'is_version_of_draft_valid': question_services.is_version_of_draft_valid(
+                question_id, version)})
+
+    @acl_decorators.can_edit_question
+    def post(self, question_id):
+        """Handles POST request for discarding draft changes."""
+        question_services.discard_draft(question_id, self.user_id)
+        self.render_json({})

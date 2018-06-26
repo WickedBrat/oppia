@@ -19,8 +19,8 @@
  */
 
 oppia.factory('ExplorationPropertyService', [
-  '$rootScope', '$log', 'AlertsService',
-  function($rootScope, $log, AlertsService) {
+  '$rootScope', '$log', 'AlertsService', 'ChangeListService',
+  function($rootScope, $log, AlertsService, ChangeListService) {
     // Public base API for data services corresponding to exploration properties
     // (title, category, etc.)
 
@@ -102,8 +102,8 @@ oppia.factory('ExplorationPropertyService', [
             BACKEND_CONVERSIONS[this.propertyName](this.savedMemento);
         }
 
-        // ChangeListService.editExplorationProperty(
-        //   this.propertyName, newBackendValue, oldBackendValue);
+        ChangeListService.editExplorationProperty(
+          this.propertyName, newBackendValue, oldBackendValue);
         this.savedMemento = angular.copy(this.displayed);
 
         $rootScope.$broadcast('explorationPropertyChanged');

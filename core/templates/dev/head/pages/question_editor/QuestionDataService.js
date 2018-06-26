@@ -39,7 +39,7 @@ oppia.factory('QuestionDataService', [
     var resolvedAnswersUrlPrefix = (
       '/question_editorhandler/resolved_answers/' + questionId);
     var questionDraftAutosaveUrl = '';
-    if (GLOBALS.can_edit) {
+    if (true) {
       questionDraftAutosaveUrl = (
         '/questionhandler/autosave_draft/' + questionId);
     } else if (GLOBALS.can_translate) {

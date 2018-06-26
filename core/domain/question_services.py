@@ -24,8 +24,8 @@ from core.domain import user_services
 from core.platform import models
 import feconf
 
-(question_models, skill_models) = models.Registry.import_models(
-    [models.NAMES.question, models.NAMES.skill])
+(question_models, skill_models, user_models) = models.Registry.import_models(
+    [models.NAMES.question, models.NAMES.skill, models.NAMES.user])
 
 CMD_CREATE_NEW = 'create_new'
 
@@ -490,3 +490,43 @@ def assign_role(committer, assignee, new_role, question_id):
 
     save_question_rights(
         question_rights, committer_id, commit_message, commit_cmds)
+
+
+def create_or_update_draft(
+        question_id, user_id, change_list, question_version, current_datetime):
+    """Create a draft with the given change list, or update the change list
+    of the draft if it already exists. A draft is updated only if the change
+    list timestamp of the new change list is greater than the change list
+    timestamp of the draft.
+    The method assumes that a QuestionUserDataModel object exists for the
+    given user and question.
+
+    Args:
+        question_id: str. The id of the question.
+        user_id: str. The id of the user.
+        change_list: list(QuestionChange). A list that contains the changes
+            to be made to the QuestionUserDataModel object.
+        question_version: int. The current version of the question.
+        current_datetime: datetime.datetime. The current date and time.
+    """
+    question_user_data = user_models.QuestionUserDataModel.get(
+        user_id, question_id)
+    if (question_user_data and question_user_data.draft_change_list and
+            question_user_data.draft_change_list_last_updated > current_datetime):
+        return
+
+    updated_question = apply_change_list(question_id, change_list)
+    updated_question.validate()
+
+    if question_user_data is None:
+        question_user_data = user_models.QuestionUserDataModel.create(
+            user_id, question_id)
+
+    draft_change_list_id = question_user_data.draft_change_list_id
+    draft_change_list_id += 1
+    change_list_dict = [change.to_dict() for change in change_list]
+    question_user_data.draft_change_list = change_list_dict
+    question_user_data.draft_change_list_last_updated = current_datetime
+    question_user_data.draft_change_list_question_version = question_version
+    question_user_data.draft_change_list_id = draft_change_list_id
+    question_user_data.put()

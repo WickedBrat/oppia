@@ -1302,3 +1302,69 @@ def unpublish_collection(committer, collection_id):
     """
     _unpublish_activity(
         committer, collection_id, constants.ACTIVITY_TYPE_COLLECTION)
+
+
+def check_can_edit_question(user, question_rights):
+    """Checks whether the user can edit given question.
+
+    Args:
+        user: UserActionsInfo. Object having user_id, role and actions for
+            given user.
+        question_rights: QuestionRights or None. Rights object for the given
+            question.
+
+    Returns:
+        bool. Whether the given user can edit this question.
+    """
+    if question_rights is None:
+        return False
+
+    if role_services.ACTION_EDIT_ANY_QUESTION not in user.actions:
+        return False
+
+    if question_rights.is_manager(user.user_id):
+        return True
+
+    return False
+
+
+def check_can_publish_question(user, question_rights):
+    """Checks whether the user can publish given question.
+
+    Args:
+        user: UserActionsInfo. Object having user_id, role and actions for
+            given user.
+        question_rights: QuestionRights or None. Rights object for the given
+            question.
+
+    Returns:
+        bool. Whether the user can publish given question.
+    """
+    if question_rights is None:
+        return False
+
+    if role_services.ACTION_PUBLISH_ANY_QUESTION in user.actions:
+        return True
+
+    return False
+
+
+def check_can_unpublish_question(user, question_rights):
+    """Checks whether the user can unpublish given question.
+
+    Args:
+        user: UserActionsInfo. Object having user_id, role and actions for
+            given user.
+        question_rights: QuestionRights or None. Rights object for the given
+            question.
+
+    Returns:
+        bool. Whether the user can unpublish given question.
+    """
+    if question_rights is None:
+        return False
+
+    if role_services.ACTION_UNPUBLISH_ANY_QUESTION in user.actions:
+        return True
+
+    return False

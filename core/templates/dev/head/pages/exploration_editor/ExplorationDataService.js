@@ -34,6 +34,13 @@ oppia.factory('ExplorationDataService', [
         break;
       }
     }
+    if (!explorationId) {
+      $log.error(
+        'Unexpected call to ExplorationDataService for pathname ',
+        pathnameArray[i]);
+      // Note: if we do not return anything, Karma unit tests fail.
+      return {};
+    }
 
     var resolvedAnswersUrlPrefix = (
       '/createhandler/resolved_answers/' + explorationId);

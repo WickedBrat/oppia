@@ -90,10 +90,8 @@ class EditableQuestionDataHandler(base.BaseHandler):
 
         self.values.update({
             'question': question.to_dict(),
-            'can_delete': rights_manager.check_can_delete_activity(
-                self.user, question_rights),
-            'can_edit': rights_manager.check_can_edit_question(
-                self.user, question_rights),
+            'can_edit': question_services.check_can_edit_question(
+                self.user, question.question_id),
             'can_publish': rights_manager.check_can_publish_question(
                 self.user, question_rights),
             'can_unpublish': rights_manager.check_can_unpublish_question(

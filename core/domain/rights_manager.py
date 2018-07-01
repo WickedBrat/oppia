@@ -1304,8 +1304,8 @@ def unpublish_collection(committer, collection_id):
         committer, collection_id, constants.ACTIVITY_TYPE_COLLECTION)
 
 
-def check_can_edit_question(user, question_rights):
-    """Checks whether the user can edit given question.
+def check_can_delete_question(user, question_rights):
+    """Checks whether the user can delete given question.
 
     Args:
         user: UserActionsInfo. Object having user_id, role and actions for
@@ -1314,15 +1314,12 @@ def check_can_edit_question(user, question_rights):
             question.
 
     Returns:
-        bool. Whether the given user can edit this question.
+        bool. Whether the user can delete given question.
     """
     if question_rights is None:
         return False
 
-    if role_services.ACTION_EDIT_ANY_QUESTION not in user.actions:
-        return False
-
-    if question_rights.is_manager(user.user_id):
+    if role_services.ACTION_PUBLISH_ANY_QUESTION in user.actions:
         return True
 
     return False

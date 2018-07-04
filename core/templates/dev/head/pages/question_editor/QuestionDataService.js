@@ -88,7 +88,7 @@ oppia.factory('QuestionDataService', [
       },
       // Returns a promise that supplies the data for the current question.
       getData: function(errorCallback) {
-        console.log(questionData.data);
+        console.log(questionData, questionData.data);
         if (questionData.data) {
           $log.info('Found question data in cache.');
           return $q.resolve(questionData.data);

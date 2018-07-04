@@ -665,12 +665,13 @@ def get_user_question_data(
         'draft_change_list_id': draft_change_list_id,
         'question_id': question_id,
         'language_code': question.language_code,
-        'param_changes': {},
-        'param_specs': [],
+        'param_changes': [],
+        'param_specs': {},
         'states': states,
         'version': question.question_data_schema_version,
         'is_version_of_draft_valid': is_valid_draft_version,
-        'draft_changes': draft_changes
+        'draft_changes': draft_changes,
+        'init_state_name': 'question_data'
     }
 
     return editor_dict

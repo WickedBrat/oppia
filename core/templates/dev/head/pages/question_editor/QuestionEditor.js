@@ -45,13 +45,11 @@ oppia.controller('QuestionEditor', [
   'EditabilityService', 'QuestionStatesService', 'RouterService',
   'StateEditorTutorialFirstTimeService',
   'ExplorationParamSpecsService', 'ExplorationParamChangesService',
-  'ExplorationWarningsService', '$templateCache', 'ContextService',
-  'ExplorationAdvancedFeaturesService', '$uibModal', 'ChangeListService',
-  'AutosaveInfoModalsService', 'siteAnalyticsService', 'ParamChangesObjectFactory',
+  'ContextService', 'ExplorationAdvancedFeaturesService', 'ChangeListService',
+  'AutosaveInfoModalsService', 'ParamChangesObjectFactory',
   'ParamSpecsObjectFactory', 'ExplorationAutomaticTextToSpeechService',
-  'UrlInterpolationService', 'ExplorationCorrectnessFeedbackService',
-  'StateTopAnswersStatsService', 'StateTopAnswersStatsBackendApiService',
-  'ThreadDataService',
+  'ExplorationCorrectnessFeedbackService', 'StateTopAnswersStatsService',
+  'StateTopAnswersStatsBackendApiService', 'ThreadDataService',
   function(
       $scope, $http, $window, $rootScope, $log, $timeout,
       QuestionDataService, EditorStateService,
@@ -60,13 +58,11 @@ oppia.controller('QuestionEditor', [
       EditabilityService, QuestionStatesService, RouterService,
       StateEditorTutorialFirstTimeService,
       ExplorationParamSpecsService, ExplorationParamChangesService,
-      ExplorationWarningsService, $templateCache, ContextService,
-      ExplorationAdvancedFeaturesService, $uibModal, ChangeListService,
-      AutosaveInfoModalsService, siteAnalyticsService, ParamChangesObjectFactory,
+      ContextService, ExplorationAdvancedFeaturesService, ChangeListService,
+      AutosaveInfoModalsService, ParamChangesObjectFactory,
       ParamSpecsObjectFactory, ExplorationAutomaticTextToSpeechService,
-      UrlInterpolationService, ExplorationCorrectnessFeedbackService,
-      StateTopAnswersStatsService, StateTopAnswersStatsBackendApiService,
-      ThreadDataService) {
+      ExplorationCorrectnessFeedbackService, StateTopAnswersStatsService,
+      StateTopAnswersStatsBackendApiService, ThreadDataService) {
     $scope.EditabilityService = EditabilityService;
     $scope.EditorStateService = EditorStateService;
     EditabilityService.markEditable();
@@ -75,12 +71,8 @@ oppia.controller('QuestionEditor', [
      *********************************************************/
     $rootScope.loadingMessage = 'Loading';
 
-    $scope.explorationId = ContextService.getQuestionId();
-    $scope.explorationUrl = '/question_editor/' + $scope.explorationId;
-    $scope.explorationDownloadUrl = (
-      '/createhandler/download/' + $scope.explorationId);
-    $scope.revertExplorationUrl = (
-      '/createhandler/revert/' + $scope.explorationId);
+    $scope.questionId = ContextService.getQuestionId();
+    $scope.questionUrl = '/question_editor/' + $scope.questionId;
 
     $scope.getTabStatuses = RouterService.getTabStatuses;
 
@@ -93,25 +85,22 @@ oppia.controller('QuestionEditor', [
         !$scope.areExplorationWarningsVisible);
     };
 
-    $scope.getExplorationUrl = function(explorationId) {
-      return explorationId ? ('/explore/' + explorationId) : '';
+    $scope.getQuestionUrl = function(questionId) {
+      return questionId ? ('/question_editor/' + questionId) : '';
     };
 
     // Initializes the exploration page using data from the backend. Called on
     // page load.
     $scope.initQuestionPage = function(successCallback) {
       GLOBALS.context = 'question_editor';
-      QuestionDataService.getData(function(explorationId, lostChanges) {
+      QuestionDataService.getData(function(questionId, lostChanges) {
         if (!AutosaveInfoModalsService.isModalOpen()) {
           AutosaveInfoModalsService.showLostChangesModal(
-            lostChanges, explorationId);
+            lostChanges, questionId);
         }
       }).then(function(data) {
-        data.param_changes = [];
-        data.param_specs = {};
-        data.init_state_name = 'question_data';
+        console.log(data);
         data.language_code = data.language_code;
-        data.questionId = data.questionId;
         QuestionStatesService.init(data.states);
         ExplorationLanguageCodeService.init(data.language_code);
         ExplorationInitStateNameService.init(data.init_state_name);
@@ -192,13 +181,13 @@ oppia.controller('QuestionEditor', [
         }
 
         StateEditorTutorialFirstTimeService.init(
-          data.show_state_editor_tutorial_on_load, $scope.explorationId);
+          data.show_state_editor_tutorial_on_load, $scope.questionId);
 
         if (QuestionRightsService.isPublic()) {
           // Stats are loaded asynchronously after the exploration data because
           // they are not needed to interact with the editor.
           StateTopAnswersStatsBackendApiService.fetchStats(
-            $scope.explorationId
+            $scope.questionId
           ).then(StateTopAnswersStatsService.init);
         }
       });

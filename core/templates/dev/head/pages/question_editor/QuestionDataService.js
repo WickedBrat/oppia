@@ -54,7 +54,7 @@ oppia.factory('QuestionDataService', [
       // Note that the changeList is the full changeList since the last
       // committed version (as opposed to the most recent autosave).
       autosaveChangeList: function(changeList, successCallback, errorCallback) {
-        // First save locally to be retrieved later if save is unsuccessful.
+        // First save locally to be retrieved later if save is unsuccessful.        
         LocalQuestionStorageService.saveQuestionDraft(
           questionId, changeList, draftChangeListId);
         $http.put(questionDraftAutosaveUrl, {
@@ -88,7 +88,6 @@ oppia.factory('QuestionDataService', [
       },
       // Returns a promise that supplies the data for the current question.
       getData: function(errorCallback) {
-        console.log(questionData, questionData.data);
         if (questionData.data) {
           $log.info('Found question data in cache.');
           return $q.resolve(questionData.data);

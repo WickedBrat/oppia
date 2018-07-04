@@ -52,7 +52,12 @@ oppia.factory('ExplorationPlayerService', [
       PlayerCorrectnessFeedbackEnabledService,
       GuestCollectionProgressService, ImagePreloaderService,
       WHITELISTED_COLLECTION_IDS_FOR_SAVING_GUEST_PROGRESS) {
-    var _explorationId = ContextService.getExplorationId();
+    var _explorationId;
+    if (GLOBALS.context === 'exploration_editor') {
+      _explorationId = ContextService.getExplorationId();
+    } else {
+      _explorationId = ContextService.getQuestionId();
+    }
     var _editorPreviewMode = (
       ContextService.getPageContext() === PAGE_CONTEXT.EDITOR);
     var _isLoggedIn = GLOBALS.userIsLoggedIn;

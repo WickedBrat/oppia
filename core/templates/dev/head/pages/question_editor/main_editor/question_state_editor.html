@@ -20,7 +20,9 @@
 
   <div ng-hide="!interactionIdIsSet || currentStateIsTerminal">
     {% include 'pages/exploration_editor/editor_tab/state_editor_responses.html' %}
-
+    <div>
+      {% include 'pages/exploration_editor/editor_tab/state_editor_hints.html' %}
+    </div>
     <div ng-if="currentInteractionCanHaveSolution">
       {% include 'pages/exploration_editor/editor_tab/state_editor_solution.html' %}
     </div>

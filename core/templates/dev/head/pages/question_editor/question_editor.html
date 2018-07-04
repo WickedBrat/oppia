@@ -11,8 +11,9 @@
 {% block header_js %}
   {{ super() }}
   <script>
-    console.log(('{{ALLOWED_QUESTION_INTERACTION_CATEGORIES}}'));
-    
+    GLOBALS.ALLOWED_INTERACTION_CATEGORIES = JSON.parse(
+      '{{ALLOWED_QUESTION_INTERACTION_CATEGORIES|js_string}}');
+    GLOBALS.INTERACTION_SPECS = JSON.parse('{{INTERACTION_SPECS|js_string}}');
   </script>
   <style>
     html, body {
@@ -34,7 +35,14 @@
 {% endblock content %}
 
 {% block footer_js %}
-  {{ super() }}
+  {{ super() }}  
+  <script src="/third_party/static/d3js-3.4.11/d3.min.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/mathjaxConfig.js"></script>
+  <script src="/third_party/static/MathJax-2.6.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script>
+    {{ value_generators_js }}
+  </script>
+
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/question_editor/QuestionEditorNavbarBreadcrumbDirective.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/question_editor/QuestionRouterService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/question_editor/QuestionEditor.js"></script>
@@ -111,7 +119,7 @@
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_editor/editor_tab/TrainingModalService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_editor/editor_tab/TrainingDataService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_editor/editor_tab/StateContentEditorDirective.js"></script>
-  <!-- <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_editor/editor_tab/StateHints.js"></script> -->
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_editor/editor_tab/StateHints.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_editor/editor_tab/StateGraphVisualizationDirective.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_editor/editor_tab/UnresolvedAnswersOverviewDirective.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_editor/editor_tab/InteractionDetailsCacheService.js"></script>
@@ -194,6 +202,8 @@
   <script src="{{TEMPLATE_DIR_PREFIX}}/domain/classifier/AnswerClassificationResultObjectFactory.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/domain/exploration/EditableExplorationBackendApiService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/domain/exploration/ReadOnlyExplorationBackendApiService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/domain/statistics/PlaythroughObjectFactory.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/domain/statistics/LearnerActionObjectFactory.js"></script>
 
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/AnswerClassificationService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/TutorCardDirective.js"></script>
@@ -203,19 +213,38 @@
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/AnswerClassificationService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/StateClassifierMappingService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/PredictionAlgorithmRegistryService.js"></script>
-
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/PlayerServices.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/LearnerParamsService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/PlayerTranscriptService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/PlaythroughService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/StatsReportingService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/AudioTranslationLanguageService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/AudioTranslationManagerService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_editor/GraphDataService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/NumberAttemptsService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/AudioPreloaderService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/PlayerCorrectnessFeedbackEnabledService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/ImagePreloaderService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_player/ExtractImageFilenamesFromStateService.js"></script>
 
   <script src="{{TEMPLATE_DIR_PREFIX}}/services/EditabilityService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/services/ExplorationHtmlFormatterService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/services/LocalQuestionStorageService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/services/LocalStorageService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/services/GenerateContentIdService.js"></script>
-  <script src="{{TEMPLATE_DIR_PREFIX}}/pages/exploration_editor/GraphDataService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/services/ComputeGraphService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/services/MessengerService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/services/AudioPlayerService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/services/AutogeneratedAudioPlayerService.js"></script>
+  <script src="{{TEMPLATE_DIR_PREFIX}}/services/SpeechSynthesisChunkerService.js"></script>
 
   <script src="{{TEMPLATE_DIR_PREFIX}}/expressions/ExpressionSyntaxTreeService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/expressions/ExpressionEvaluatorService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/expressions/ExpressionParserService.js"></script>
   <script src="{{TEMPLATE_DIR_PREFIX}}/expressions/ExpressionInterpolationService.js"></script>
 
+  {% include 'components/rich_text_components.html' %}
+  {{ interaction_templates }}
+  {{ visualizations_html }}
+  {{ dependencies_html }}
 {% endblock %}

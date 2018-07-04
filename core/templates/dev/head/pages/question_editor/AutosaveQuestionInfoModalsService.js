@@ -62,7 +62,7 @@ oppia.factory('AutosaveQuestionInfoModalsService', [
       showVersionMismatchModal: function(lostChanges) {
         $uibModal.open({
           templateUrl: UrlInterpolationService.getDirectiveTemplateUrl(
-            '/pages/question_editor/' +
+            '/pages/exploration_editor/' +
             'save_version_mismatch_modal_directive.html'),
           // Prevent modal from closing when the user clicks outside it.
           backdrop: 'static',

@@ -34,8 +34,6 @@ oppia.factory('QuestionChangeListService', [
     // undone change.
     var undoneChangeStack = [];
 
-    // All these constants should correspond to those in exp_domain.py.
-    // TODO(sll): Enforce this in code.
     var CMD_UPDATE_QUESTION_PROPERTY = 'update_question_property';
 
     var ALLOWED_EXPLORATION_BACKEND_NAMES = {
@@ -126,12 +124,6 @@ oppia.factory('QuestionChangeListService', [
        *
        * @param {string} stateName - The name of the deleted state.
        */
-      deleteState: function(stateName) {
-        addChange({
-          cmd: CMD_DELETE_STATE,
-          state_name: stateName
-        });
-      },
       discardAllChanges: function() {
         questionChangeList = [];
         undoneChangeStack = [];
@@ -154,7 +146,7 @@ oppia.factory('QuestionChangeListService', [
           return;
         }
         addChange({
-          cmd: CMD_EDIT_EXPLORATION_PROPERTY,
+          cmd: CMD_UPDATE_QUESTION_PROPERTY,
           new_value: angular.copy(newValue),
           old_value: angular.copy(oldValue),
           property_name: backendName

@@ -24,8 +24,9 @@ from core.domain import user_services
 from core.platform import models
 import feconf
 
-(question_models, skill_models) = models.Registry.import_models(
-    [models.NAMES.question, models.NAMES.skill])
+memcache_services = models.Registry.import_memcache_services()
+(question_models, skill_models, user_models) = models.Registry.import_models(
+    [models.NAMES.question, models.NAMES.skill, models.NAMES.user])
 
 CMD_CREATE_NEW = 'create_new'
 
@@ -108,25 +109,56 @@ def get_question_from_model(question_model):
         question_model.language_code)
 
 
-def get_question_by_id(question_id, strict=True):
-    """Returns a domain object representing a question.
+def _get_question_memcache_key(question_id, version=None):
+    """Returns a memcache key for an question.
 
     Args:
-        question_id: str. ID of the question.
-        strict: bool. Whether to fail noisily if no question with the given
-            id exists in the datastore.
+        question_id: str. The id of the question whose memcache key
+            is to be returned.
+        version: int or None. If specified, the version of the question
+            whose memcache key is to be returned.
 
     Returns:
-        Question or None. The domain object representing a question with the
-        given id, or None if it does not exist.
+        str. Memcache key for the given question (or question version).
     """
-    question_model = question_models.QuestionModel.get(
-        question_id, strict=strict)
-    if question_model:
-        question = get_question_from_model(question_model)
-        return question
+
+    if version:
+        return 'question-version:%s:%s' % (question_id, version)
     else:
-        return None
+        return 'question:%s' % question_id
+
+
+def get_question_by_id(question_id, strict=True, version=None):
+    """Returns an question domain object.
+
+    Args:
+        question_id: str. The id of the question to be returned.
+        strict: bool. Whether to fail noisily if no question with a given id
+            exists.
+        version: int or None. The version of the question to be returned.
+            If None, the latest version of the question is returned.
+
+    Returns:
+        Question. The domain object corresponding to the given question.
+    """
+
+    question_memcache_key = _get_question_memcache_key(
+        question_id, version=version)
+    memcached_question = memcache_services.get_multi(
+        [question_memcache_key]).get(question_memcache_key)
+
+    if memcached_question is not None:
+        return memcached_question
+    else:
+        question_model = question_models.QuestionModel.get(
+            question_id, strict=strict, version=version)
+        if question_model:
+            question = get_question_from_model(question_model)
+            memcache_services.set_multi({
+                question_memcache_key: question})
+            return question
+        else:
+            return None
 
 
 def get_questions_by_ids(question_ids):
@@ -478,15 +510,16 @@ def check_can_edit_question(user_id, question_id):
     if question_summary.status == feconf.QUESTION_STATUS_PENDING:
         return False
 
+    if ((question_summary.status == feconf.ACTIVITY_STATUS_PRIVATE or
+         question_summary.status == feconf.QUESTION_STATUS_REJECTED) and
+            question_summary.creator_id == user_id):
+        return True
+
     if (user_services.is_admin(user_id) or
             user_services.is_topic_manager(user_id)):
         if question_summary.status == feconf.QUESTION_STATUS_APPROVED:
             return True
         return False
-
-    if (question_summary.status == feconf.ACTIVITY_STATUS_PRIVATE or
-            question_summary.status == feconf.QUESTION_STATUS_REJECTED):
-        return True
 
     return False
 
@@ -544,3 +577,140 @@ def unpublish_question(question_id, committer_id):
         raise Exception('The question is already unpublished.')
     question_summary.status = feconf.ACTIVITY_STATUS_PRIVATE
     question_summary.put()
+
+
+def is_version_of_draft_valid(question_id, version):
+    """Checks if the draft version is the same as the latest version of the
+    question.
+
+    Args:
+        question_id: str. The id of the question.
+        version: int. The draft version which is to be validate.
+
+    Returns:
+        bool. Whether the given version number is the same as the current
+        version number of the question in the datastore.
+    """
+    return get_question_by_id(
+        question_id).question_data_schema_version == version
+
+
+def get_question_with_draft_applied(question_id, user_id):
+    """If a draft exists for the given user and question,
+    apply it to the question.
+
+    Args:
+        question_id: str. The id of the question.
+        user_id: str. The id of the user whose draft is to be applied.
+
+    Returns:
+        Question. The question domain object.
+    """
+
+    question_user_data = user_models.QuestionUserDataModel.get(user_id, question_id)
+    question = get_question_by_id(question_id)
+    if question_user_data:
+        if question_user_data.draft_change_list:
+            draft_change_list = [
+                question_domain.QuestionChange(change)
+                for change in question_user_data.draft_change_list]
+    return (
+        apply_change_list(question_id, draft_change_list)
+        if question_user_data and question_user_data.draft_change_list and
+        is_version_of_draft_valid(
+            question_id, question_user_data.draft_change_list_question_version)
+        else question)
+
+
+def discard_draft(question_id, user_id):
+    """Discard the draft for the given user and question.
+
+    Args:
+        question_id: str. The id of the question.
+        user_id: str. The id of the user whose draft is to be discarded.
+    """
+
+    question_user_data = user_models.QuestionUserDataModel.get(
+        user_id, question_id)
+    if question_user_data:
+        question_user_data.draft_change_list = None
+        question_user_data.draft_change_list_last_updated = None
+        question_user_data.draft_change_list_question_version = None
+        question_user_data.put()
+
+
+def get_user_question_data(
+        user_id, question_id, apply_draft=False, version=None):
+    """Returns a description of the given question."""
+    if apply_draft:
+        question = get_question_with_draft_applied(question_id, user_id)
+    else:
+        question = get_question_by_id(question_id, version=version)
+
+    states = {}
+    state_dict = question.question_data
+    states['question_data'] = state_dict
+    question_user_data = user_models.QuestionUserDataModel.get(
+        user_id, question_id)
+    draft_changes = (question_user_data.draft_change_list if question_user_data
+                     and question_user_data.draft_change_list else None)
+    is_valid_draft_version = (
+        is_version_of_draft_valid(
+            question_id, question_user_data.draft_change_list_question_version)
+        if question_user_data and question_user_data.draft_change_list_question_version
+        else None)
+    draft_change_list_id = (question_user_data.draft_change_list_id
+                            if question_user_data else 0)
+    editor_dict = {
+        'draft_change_list_id': draft_change_list_id,
+        'question_id': question_id,
+        'language_code': question.language_code,
+        'param_changes': {},
+        'param_specs': [],
+        'states': states,
+        'version': question.question_data_schema_version,
+        'is_version_of_draft_valid': is_valid_draft_version,
+        'draft_changes': draft_changes
+    }
+
+    return editor_dict
+
+
+def create_or_update_draft(
+        question_id, user_id, change_list, question_version, current_datetime):
+    """Create a draft with the given change list, or update the change list
+    of the draft if it already exists. A draft is updated only if the change
+    list timestamp of the new change list is greater than the change list
+    timestamp of the draft.
+    The method assumes that a QuestionUserDataModel object exists for the
+    given user and question.
+
+    Args:
+        question_id: str. The id of the question.
+        user_id: str. The id of the user.
+        change_list: list(QuestionChange). A list that contains the changes
+            to be made to the QuestionUserDataModel object.
+        question_version: int. The current version of the question.
+        current_datetime: datetime.datetime. The current date and time.
+    """
+    question_user_data = user_models.QuestionUserDataModel.get(
+        user_id, question_id)
+    if (question_user_data and question_user_data.draft_change_list and
+            question_user_data.draft_change_list_last_updated > current_datetime):
+        return
+
+    updated_question = apply_change_list(question_id, change_list)
+    updated_question.validate()
+
+    if question_user_data is None:
+        question_user_data = user_models.QuestionUserDataModel.create(
+            user_id, question_id)
+
+    draft_change_list_id = question_user_data.draft_change_list_id
+    draft_change_list_id += 1
+    change_list_dict = [change.to_dict() for change in change_list]
+    question_user_data.draft_change_list = change_list_dict
+    question_user_data.draft_change_list_last_updated = current_datetime
+    question_user_data.draft_change_list_question_version = question_version
+    question_user_data.draft_change_list_id = draft_change_list_id
+    question_user_data.put()

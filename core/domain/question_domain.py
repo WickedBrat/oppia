@@ -40,6 +40,10 @@ ROLE_NONE = 'none'
 CMD_UPDATE_QUESTION_PROPERTY = 'update_question_property'
 CMD_EDIT_STATE_PROPERTY = 'edit_state_property'
 
+OPTIONAL_CMD_ATTRIBUTE_NAMES = [
+    'property_name', 'new_value', 'old_value', 'content', 'cmd'
+]
+
 # The following commands are deprecated, as these functionalities will be
 # handled by a QuestionSkillLink class in the future.
 CMD_ADD_QUESTION_SKILL = 'add_question_skill'
@@ -53,13 +57,44 @@ CMD_REJECT_QUESTION = 'reject_question'
 CMD_PUBLISH_QUESTION = 'publish_question'
 CMD_UNPUBLISH_QUESTION = 'unpublish_question'
 
+STATE_PROPERTY_PARAM_CHANGES = 'param_changes'
+STATE_PROPERTY_CONTENT = 'content'
+STATE_PROPERTY_CONTENT_IDS_TO_AUDIO_TRANSLATIONS = (
+    'content_ids_to_audio_translations')
+STATE_PROPERTY_INTERACTION_ID = 'widget_id'
+STATE_PROPERTY_INTERACTION_CUST_ARGS = 'widget_customization_args'
+STATE_PROPERTY_INTERACTION_ANSWER_GROUPS = 'answer_groups'
+STATE_PROPERTY_INTERACTION_DEFAULT_OUTCOME = 'default_outcome'
+STATE_PROPERTY_UNCLASSIFIED_ANSWERS = (
+    'confirmed_unclassified_answers')
+STATE_PROPERTY_INTERACTION_HINTS = 'hints'
+STATE_PROPERTY_INTERACTION_SOLUTION = 'solution'
+# These four properties are kept for legacy purposes and are not used anymore.
+STATE_PROPERTY_INTERACTION_HANDLERS = 'widget_handlers'
+STATE_PROPERTY_INTERACTION_STICKY = 'widget_sticky'
+GADGET_PROPERTY_VISIBILITY = 'gadget_visibility'
+GADGET_PROPERTY_CUST_ARGS = 'gadget_customization_args'
+
 
 class QuestionChange(object):
     """Domain object for changes made to question object."""
+
     QUESTION_PROPERTIES = (
         QUESTION_PROPERTY_QUESTION_DATA,
         QUESTION_PROPERTY_LANGUAGE_CODE,
-        QUESTION_PROPERTY_CONTENT)
+        QUESTION_PROPERTY_CONTENT,
+        STATE_PROPERTY_PARAM_CHANGES,
+        STATE_PROPERTY_CONTENT,
+        STATE_PROPERTY_CONTENT_IDS_TO_AUDIO_TRANSLATIONS,
+        STATE_PROPERTY_INTERACTION_ID,
+        STATE_PROPERTY_INTERACTION_CUST_ARGS,
+        STATE_PROPERTY_INTERACTION_STICKY,
+        STATE_PROPERTY_INTERACTION_HANDLERS,
+        STATE_PROPERTY_INTERACTION_ANSWER_GROUPS,
+        STATE_PROPERTY_INTERACTION_DEFAULT_OUTCOME,
+        STATE_PROPERTY_INTERACTION_HINTS,
+        STATE_PROPERTY_INTERACTION_SOLUTION,
+        STATE_PROPERTY_UNCLASSIFIED_ANSWERS)
 
     def __init__(self, change_dict):
         """Initialize a QuestionChange object from a dict.
@@ -78,7 +113,10 @@ class QuestionChange(object):
         if 'cmd' not in change_dict:
             raise Exception('Invalid change_dict: %s' % change_dict)
         self.cmd = change_dict['cmd']
-        if self.cmd == CMD_EDIT_STATE_PROPERTY:
+        print '++++++++++++++++++++++++++++++++++++++++'
+        print change_dict
+        print '++++++++++++++++++++++++++++++++++++++++'
+        if self.cmd == CMD_UPDATE_QUESTION_PROPERTY:
             if (change_dict['property_name'] in
                     self.QUESTION_PROPERTIES):
                 self.property_name = change_dict['property_name']
@@ -93,12 +131,14 @@ class QuestionChange(object):
         Returns:
             dict. A dict representing QuestionChange instance.
         """
-        return {
-            'cmd': self.cmd,
-            'property_name': self.property_name,
-            'new_value': self.new_value,
-            'old_value': self.old_value
-        }
+        question_rights_change_dict = {}
+        question_rights_change_dict['cmd'] = self.cmd
+        for attribute_name in OPTIONAL_CMD_ATTRIBUTE_NAMES:
+            if hasattr(self, attribute_name):
+                question_rights_change_dict[attribute_name] = getattr(
+                    self, attribute_name)
+
+        return question_rights_change_dict
 
 
 class Question(object):
@@ -200,7 +240,7 @@ class Question(object):
         return cls(
             question_id, exp_domain.State.create_default_state(
                 feconf.DEFAULT_INIT_STATE_NAME, is_initial_state=True
-                ),
+                ).to_dict(),
             feconf.CURRENT_QUESTION_SCHEMA_VERSION,
             constants.DEFAULT_LANGUAGE_CODE)
 

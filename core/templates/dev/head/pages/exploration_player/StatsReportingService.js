@@ -48,7 +48,6 @@ oppia.constant('STATS_REPORTING_URLS', {
 oppia.factory('StatsReportingService', [
   '$http', '$interval', 'StopwatchObjectFactory', 'MessengerService',
   'UrlInterpolationService', 'STATS_REPORTING_URLS', 'siteAnalyticsService',
-<<<<<<< HEAD
   'STATS_EVENT_TYPES', 'ContextService', 'PAGE_CONTEXT',
   'DEFAULT_OUTCOME_CLASSIFICATION',
   function(
@@ -56,15 +55,6 @@ oppia.factory('StatsReportingService', [
       UrlInterpolationService, STATS_REPORTING_URLS, siteAnalyticsService,
       STATS_EVENT_TYPES, ContextService, PAGE_CONTEXT,
       DEFAULT_OUTCOME_CLASSIFICATION) {
-=======
-  'STATS_EVENT_TYPES', 'ExplorationContextService', 'PAGE_CONTEXT',
-  'DEFAULT_OUTCOME_CLASSIFICATION', 'PlaythroughService', 'ENABLE_PLAYTHROUGHS',
-  function(
-      $http, $interval, StopwatchObjectFactory, MessengerService,
-      UrlInterpolationService, STATS_REPORTING_URLS, siteAnalyticsService,
-      STATS_EVENT_TYPES, ExplorationContextService, PAGE_CONTEXT,
-      DEFAULT_OUTCOME_CLASSIFICATION, PlaythroughService, ENABLE_PLAYTHROUGHS) {
->>>>>>> question-dashboard-backend
     var explorationId = null;
     var explorationTitle = null;
     var explorationVersion = null;

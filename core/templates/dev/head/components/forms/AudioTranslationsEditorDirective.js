@@ -41,6 +41,7 @@ oppia.directive('audioTranslationsEditor', [
             LanguageUtilService, AlertsService, ContextService,
             AssetsBackendApiService) {
           $scope.isTranslatable = EditabilityService.isTranslatable;
+          var activityId;
 
           $scope.stateContentIdsToAudioTranslationsService =
               stateContentIdsToAudioTranslationsService;
@@ -59,7 +60,11 @@ oppia.directive('audioTranslationsEditor', [
                 .hasAudioTranslations($scope.contentId);
           }
 
-          var explorationId = ContextService.getExplorationId();
+          if (GLOBALS.context === 'exploration_editor') {
+            activityId = ContextService.getExplorationId();
+          } else {
+            activityId = ContextService.getQuestionId();
+          }
 
           $scope.getAudioLanguageDescription = (
             LanguageUtilService.getAudioLanguageDescription);
@@ -67,7 +72,7 @@ oppia.directive('audioTranslationsEditor', [
           $scope.getAudioTranslationFullUrl = function(filename) {
             return $sce.trustAsResourceUrl(
               AssetsBackendApiService.getAudioDownloadUrl(
-                explorationId, filename));
+                activityId, filename));
           };
 
           $scope.isFullyTranslated = function() {
@@ -189,10 +194,10 @@ oppia.directive('audioTranslationsEditor', [
                       var generatedFilename = generateNewFilename();
                       $window.localStorage.setItem(
                         'last_uploaded_audio_lang', $scope.languageCode);
-                      var explorationId = (
+                      var activityId = (
                         ContextService.getExplorationId());
                       AssetsBackendApiService.saveAudio(
-                        explorationId, generatedFilename, uploadedFile
+                        activityId, generatedFilename, uploadedFile
                       ).then(function() {
                         $uibModalInstance.close({
                           languageCode: $scope.languageCode,

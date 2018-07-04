@@ -99,23 +99,20 @@ oppia.controller('QuestionEditor', [
 
     // Initializes the exploration page using data from the backend. Called on
     // page load.
-    $scope.initExplorationPage = function(successCallback) {
+    $scope.initQuestionPage = function(successCallback) {
+      GLOBALS.context = 'question_editor';
       QuestionDataService.getData(function(explorationId, lostChanges) {
         if (!AutosaveInfoModalsService.isModalOpen()) {
           AutosaveInfoModalsService.showLostChangesModal(
             lostChanges, explorationId);
         }
       }).then(function(data) {
-        GLOBALS.context = 'question_editor';
         data.param_changes = [];
         data.param_specs = {};
         data.init_state_name = 'question_data';
-        data.language_code = data.question.language_code;
-        delete data.question.language_code;
-        data.questionId = data.question.questionId;
-        delete data.question.question_id;
-        delete data.question.question_data_schema_version;
-        QuestionStatesService.init(data.question);
+        data.language_code = data.language_code;
+        data.questionId = data.questionId;
+        QuestionStatesService.init(data.states);
         ExplorationLanguageCodeService.init(data.language_code);
         ExplorationInitStateNameService.init(data.init_state_name);
         ExplorationParamSpecsService.init(
@@ -154,7 +151,7 @@ oppia.controller('QuestionEditor', [
         }
 
         if (!RouterService.isLocationSetToNonStateEditorTab() &&
-            !data.question.hasOwnProperty(
+            !data.states.hasOwnProperty(
               RouterService.getCurrentStateFromLocationPath('gui'))) {
           if (ThreadDataService.getOpenThreadsCount() > 0) {
             RouterService.navigateToFeedbackTab();
@@ -207,10 +204,10 @@ oppia.controller('QuestionEditor', [
       });
     };
 
-    $scope.initExplorationPage();
+    $scope.initQuestionPage();
 
-    $scope.$on('initExplorationPage', function(unusedEvtData, successCallback) {
-      $scope.initExplorationPage(successCallback);
+    $scope.$on('initQuestionPage', function(unusedEvtData, successCallback) {
+      $scope.initQuestionPage(successCallback);
     });
   }
 ]);

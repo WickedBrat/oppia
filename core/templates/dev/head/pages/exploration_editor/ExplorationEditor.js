@@ -109,6 +109,7 @@ oppia.controller('ExplorationEditor', [
     // Initializes the exploration page using data from the backend. Called on
     // page load.
     $scope.initExplorationPage = function(successCallback) {
+      GLOBALS.context = 'exploration_editor';
       ExplorationDataService.getData(function(explorationId, lostChanges) {
         if (!AutosaveInfoModalsService.isModalOpen()) {
           AutosaveInfoModalsService.showLostChangesModal(

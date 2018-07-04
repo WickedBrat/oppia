@@ -678,7 +678,7 @@ class QuestionUserDataModel(base_models.BaseModel):
     """User-specific data pertaining to a specific question.
 
     Instances of this class have keys of the form
-    [USER_ID].[EXPLORATION_ID]
+    [USER_ID].[QUESTION_ID]
     """
     # The user id.
     user_id = ndb.StringProperty(required=True, indexed=True)
@@ -712,8 +712,8 @@ class QuestionUserDataModel(base_models.BaseModel):
             question_id: str. The id of the question.
 
         Returns:
-            QuestionUserDataModel. The newly created
-            QuestionUserDataModel instance.
+            QuestionUserDataModel. The newly created QuestionUserDataModel
+            instance.
         """
         instance_id = cls._generate_id(user_id, question_id)
         return cls(

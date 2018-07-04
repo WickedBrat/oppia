@@ -842,7 +842,7 @@ def can_edit_question(handler):
             raise base.UserFacingExceptions.PageNotFoundException
 
         if question_services.check_can_edit_question(
-                self.user, question_rights):
+                self.user.user_id, question_id):
             return handler(self, question_id, **kwargs)
         else:
             raise self.UnauthorizedUserException(
@@ -882,7 +882,8 @@ def can_delete_question(handler):
 
         user_actions_info = user_services.UserActionsInfo(self.user_id)
 
-        if role_services.ACTION_DELETE_ANY_QUESTION in user_actions_info.actions:
+        if (role_services.ACTION_DELETE_ANY_QUESTION in
+                user_actions_info.actions):
             return handler(self, question_id, **kwargs)
         else:
             raise self.UnauthorizedUserException(

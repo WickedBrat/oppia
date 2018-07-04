@@ -38,10 +38,15 @@ oppia.controller('StateResponses', [
       '/general/drag_dots.png');
 
     var _initializeTrainingData = function() {
-      var explorationId = ContextService.getQuestionId();
+      var activityId;
+      if (GLOBALS.context === 'exploration_editor') {
+        activityId = ContextService.getExplorationId();
+      } else {
+        activityId = ContextService.getQuestionId();
+      }
       var currentStateName = EditorStateService.getActiveStateName();
       TrainingDataService.initializeTrainingData(
-        explorationId, currentStateName);
+        activityId, currentStateName);
     };
 
     $scope.suppressDefaultAnswerGroupWarnings = function() {
@@ -274,7 +279,12 @@ oppia.controller('StateResponses', [
               ExplorationStatesService, TrainingDataService,
               AnswerClassificationService, FocusManagerService,
               AngularNameService, EXPLICIT_CLASSIFICATION) {
-            var _explorationId = ContextService.getExplorationId();
+            var _activityId;
+            if (GLOBALS.context === 'exploration_editor') {
+              _activityId = ContextService.getExplorationId();
+            } else {
+              _activityId = ContextService.getQuestionId();
+            }
             var _stateName = EditorStateService.getActiveStateName();
             var _state = ExplorationStatesService.getState(_stateName);
 
@@ -325,7 +335,7 @@ oppia.controller('StateResponses', [
 
               var classificationResult = (
                 AnswerClassificationService.getMatchingClassificationResult(
-                  _explorationId, _stateName, _state, answer, rulesService));
+                  _activityId, _stateName, _state, answer, rulesService));
               var feedbackHtml = 'Nothing';
               var dest = classificationResult.outcome.dest;
               if (classificationResult.outcome.hasNonemptyFeedback()) {

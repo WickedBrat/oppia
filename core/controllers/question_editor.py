@@ -17,19 +17,80 @@ and are created.
 """
 import datetime
 import json
+import logging
 
 from core.controllers import base
 from core.domain import acl_decorators
+from core.domain import interaction_registry
 from core.domain import question_domain
 from core.domain import question_services
-from core.domain import rights_manager
 from core.domain import role_services
 from core.domain import user_services
 from core.platform import models
 import feconf
 import utils
 
-(user_models) = models.Registry.import_models([models.NAMES.user])
+(user_models,) = models.Registry.import_models([models.NAMES.user])
+
+
+def _require_valid_version(version_from_payload, question_version):
+    """Check that the payload version matches the given question
+    version.
+    """
+    if version_from_payload is None:
+        raise base.BaseHandler.InvalidInputException(
+            'Invalid POST request: a version must be specified.')
+
+    if version_from_payload != question_version:
+        raise base.BaseHandler.InvalidInputException(
+            'Trying to update version %s of question from version %s, '
+            'which is too old. Please reload the page and try again.'
+            % (question_version, version_from_payload))
+
+
+# class QuestionEditorLogoutHandler(base.BaseHandler):
+    # """Handles logout from question editor page."""
+
+    # @acl_decorators.open_access
+    # def get(self):
+    #     """Checks if question is published and redirects accordingly."""
+
+    #     url_to_redirect_to = str(self.request.get('return_url'))
+    #     url_to_redirect_to_regex = (
+    #         r'%s/(?P<question_id>[\w-]+)$' % feconf.EDITOR_URL_PREFIX)
+    #     is_valid_path = re.match(url_to_redirect_to_regex, url_to_redirect_to)
+
+    #     if is_valid_path:
+    #         question_id = is_valid_path.group(1)
+    #         question_rights = rights_manager.get_question_rights(
+    #             question_id, strict=False)
+
+    #         if question_rights is None or question_rights.is_private():
+    #             url_to_redirect_to = feconf.LIBRARY_INDEX_URL
+    #     else:
+    #         url_to_redirect_to = feconf.LIBRARY_INDEX_URL
+
+    #     self.redirect(super(EditorLogoutHandler, self)._get_logout_url(
+    #         url_to_redirect_to))
+
+
+class QuestionEditorHandler(base.BaseHandler):
+    """Base class for all handlers for the question editor page."""
+
+    def _get_logout_url(self, redirect_url_on_logout):
+        """This overrides the method in base.BaseHandler.
+        Returns logout url which will be handled by
+        QuestionEditorLogoutHandler.
+
+        Args:
+            redirect_url_on_logout: str. URL to redirect to on logout.
+
+        Returns:
+            str. logout url.
+        """
+        logout_url = utils.set_url_query_parameter(
+            '/question_editor_logout', 'return_url', redirect_url_on_logout)
+        return logout_url
 
 
 class QuestionEditorPage(base.BaseHandler):
@@ -49,7 +110,12 @@ class QuestionEditorPage(base.BaseHandler):
                 'The question with the given id doesn\'t exist.')
 
         self.values.update({
-            'question_id': question.question_id,
+            'INTERACTION_SPECS': interaction_registry.Registry.get_all_question_editor_specs(),
+            'question_id': question.to_dict(),
+            'can_edit': question_services.check_can_edit_question(
+                self.user.user_id, question.question_id),
+            'ALLOWED_QUESTION_INTERACTION_CATEGORIES': (
+                feconf.ALLOWED_QUESTION_INTERACTION_CATEGORIES),
             'nav_mode': feconf.NAV_MODE_QUESTION_EDITOR
         })
 
@@ -61,45 +127,20 @@ class QuestionEditorPage(base.BaseHandler):
 class EditableQuestionDataHandler(base.BaseHandler):
     """A data handler for questions which supports writing."""
 
-    def _require_valid_version(self, version_from_payload, question_version):
-        """Check that the payload version matches the given question
-        version.
-        """
-        if version_from_payload is None:
-            raise base.BaseHandler.InvalidInputException(
-                'Invalid POST request: a version must be specified.')
-
-        if version_from_payload != question_version:
-            raise base.BaseHandler.InvalidInputException(
-                'Trying to update version %s of question from version %s, '
-                'which is too old. Please reload the page and try again.'
-                % (question_version, version_from_payload))
-
     @acl_decorators.can_view_any_question_editor
     def get(self, question_id):
-        """Populates the data on the individual question page."""
-        if not feconf.ENABLE_NEW_STRUCTURES:
-            raise self.PageNotFoundException
+        """Gets the data for the question overview page."""
+        # 'apply_draft' and 'v'(version) are optional parameters because the
+        # question history tab also uses this handler, and these parameters
+        # are not used by that tab.
+        version = self.request.get('v', default_value=None)
+        apply_draft = self.request.get('apply_draft', default_value=False)
 
-        question = question_services.get_question_by_id(question_id)
-        question_rights = question_services.get_question_rights(question_id)
+        question_data = question_services.get_user_question_data(
+            self.user_id, question_id, apply_draft=apply_draft,
+            version=version)
 
-        if question is None:
-            raise self.PageNotFoundException(
-                'The question with the given id doesn\'t exist.')
-
-        self.values.update({
-            'question': question.to_dict(),
-            'can_edit': question_services.check_can_edit_question(
-                self.user, question.question_id),
-            'can_publish': rights_manager.check_can_publish_question(
-                self.user, question_rights),
-            'can_unpublish': rights_manager.check_can_unpublish_question(
-                self.user, question_rights),
-            'ALLOWED_QUESTION_INTERACTION_CATEGORIES': (
-                feconf.ALLOWED_QUESTION_INTERACTION_CATEGORIES)
-        })
-
+        self.values.update(question_data)
         self.render_json(self.values)
 
     @acl_decorators.can_edit_question
@@ -108,7 +149,6 @@ class EditableQuestionDataHandler(base.BaseHandler):
         if not feconf.ENABLE_NEW_STRUCTURES:
             raise self.PageNotFoundException
 
-        question_domain.Question.require_valid_question_id(question_id)
         question = question_services.get_question_by_id(question_id)
         if question is None:
             raise self.PageNotFoundException(
@@ -145,12 +185,19 @@ class EditableQuestionDataHandler(base.BaseHandler):
         if not feconf.ENABLE_NEW_STRUCTURES:
             raise self.PageNotFoundException
 
-        question_domain.Question.require_valid_question_id(question_id)
+        log_debug_string = '(%s) %s tried to delete question %s' % (
+            self.role, self.user_id, question_id)
+        logging.debug(log_debug_string)
+
         question = question_services.get_question_by_id(question_id)
         if question is None:
             raise self.PageNotFoundException(
                 'The question with the given id doesn\'t exist.')
         question_services.delete_question(self.user_id, question_id)
+
+        log_info_string = '(%s) %s deleted question %s' % (
+            self.role, self.user_id, question_id)
+        logging.info(log_info_string)
 
 
 class QuestionRightsHandler(base.BaseHandler):

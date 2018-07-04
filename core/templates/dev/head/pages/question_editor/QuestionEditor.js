@@ -99,7 +99,6 @@ oppia.controller('QuestionEditor', [
             lostChanges, questionId);
         }
       }).then(function(data) {
-        console.log(data);
         data.language_code = data.language_code;
         QuestionStatesService.init(data.states);
         ExplorationLanguageCodeService.init(data.language_code);
